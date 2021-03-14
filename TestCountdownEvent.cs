@@ -1,6 +1,6 @@
 ﻿// ============================================================================
 // 
-// AutoResetEvent の速度測定
+// CountdownEvent の速度測定
 // 
 // ============================================================================
 
@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace TestAutoResetEvent
 {
-	public class TestAutoResetEvent : TestSync
+	public class TestCountdownEvent : TestSync
 	{
 		// ====================================================================
 		// コンストラクター・デストラクター
@@ -21,11 +21,11 @@ namespace TestAutoResetEvent
 		// --------------------------------------------------------------------
 		// コンストラクター
 		// --------------------------------------------------------------------
-		public TestAutoResetEvent(AutoResetEvent autoResetEventMainToSub, AutoResetEvent autoResetEventSubToMain, CancellationToken cancellationToken)
-				: base(cancellationToken)
+		public TestCountdownEvent(CountdownEvent countdownEventMainToSub, CountdownEvent countdownEventSubToMain, CancellationToken cancellationToken)
+			: base(cancellationToken)
 		{
-			_autoResetEventMainToSub = autoResetEventMainToSub;
-			_autoResetEventToSubToMain = autoResetEventSubToMain;
+			_countdownEventMainToSub = countdownEventMainToSub;
+			_countdownEventSubToMain = countdownEventSubToMain;
 		}
 
 		// ====================================================================
@@ -39,25 +39,27 @@ namespace TestAutoResetEvent
 		{
 			while (true)
 			{
-				_autoResetEventMainToSub.WaitOne();
+				_countdownEventMainToSub.Wait();
+				_countdownEventMainToSub.Reset();
 				if (_cancellationToken.IsCancellationRequested)
 				{
 					return;
 				}
 
 				Counter++;
-				_autoResetEventToSubToMain.Set();
+				_countdownEventSubToMain.Signal();
 			}
 		}
+
 
 		// ====================================================================
 		// private メンバー変数
 		// ====================================================================
 
 		// Main() からこちらへの通知
-		private AutoResetEvent _autoResetEventMainToSub;
+		private CountdownEvent _countdownEventMainToSub;
 
 		// こちらから Main() への通知
-		private AutoResetEvent _autoResetEventToSubToMain;
+		private CountdownEvent _countdownEventSubToMain;
 	}
 }

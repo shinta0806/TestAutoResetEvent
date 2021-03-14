@@ -18,25 +18,57 @@ namespace TestAutoResetEvent
 	{
 		public static async Task Main(String[] args)
 		{
-			const Int32 NUM_TRIALS = 100;
+			// 繰り返し回数
+			// 1 回の繰り返しでメイン→サブ、サブ→メインの 2 回同期が発生する
+			const Int32 NUM_REPEATS = 500000;
 
+			// AutoResetEvent 準備
 			using AutoResetEvent autoResetEventMainToSub = new(false);
 			using AutoResetEvent autoResetEventSubToMain = new(false);
-			using CancellationTokenSource cancellationTokenSource = new();
-			TestAutoResetEvent testAutoResetEvent = new(autoResetEventMainToSub, autoResetEventSubToMain, cancellationTokenSource.Token);
+			using CancellationTokenSource autoResetEventCancellation = new();
+			TestAutoResetEvent testAutoResetEvent = new(autoResetEventMainToSub, autoResetEventSubToMain, autoResetEventCancellation.Token);
+
+			// AutoResetEvent テスト
 			Console.WriteLine("AutoResetEvent のテスト");
 			Int32 autoResetEventStart = Environment.TickCount;
 			Task autoResetEventTask = testAutoResetEvent.Invoke();
-			for (Int32 i = 0; i < NUM_TRIALS; i++)
+			for (Int32 i = 0; i < NUM_REPEATS; i++)
 			{
 				autoResetEventMainToSub.Set();
 				autoResetEventSubToMain.WaitOne();
 			}
 			Console.WriteLine("所要時間：" + (Environment.TickCount - autoResetEventStart).ToString("#,0") + " [ms]");
-			cancellationTokenSource.Cancel();
+
+			// AutoResetEvent 後始末
+			autoResetEventCancellation.Cancel();
 			autoResetEventMainToSub.Set();
 			await autoResetEventTask;
-			Console.WriteLine("カウント：" + testAutoResetEvent.Counter);
+			Console.WriteLine("カウント：" + testAutoResetEvent.Counter.ToString("#,0"));
+
+			// CountdownEvent 準備
+			using CountdownEvent countdownEventMainToSub = new(1);
+			using CountdownEvent countdownEventSubToMain = new(1);
+			using CancellationTokenSource countdownEventCancellation = new();
+			TestCountdownEvent testCountdownEvent = new(countdownEventMainToSub, countdownEventSubToMain, countdownEventCancellation.Token);
+
+			// CountdownEvent テスト
+			Console.WriteLine(String.Empty);
+			Console.WriteLine("CountdownEvent のテスト");
+			Int32 countdownEventStart = Environment.TickCount;
+			Task countdownEventTask = testCountdownEvent.Invoke();
+			for (Int32 i = 0; i < NUM_REPEATS; i++)
+			{
+				countdownEventMainToSub.Signal();
+				countdownEventSubToMain.Wait();
+				countdownEventSubToMain.Reset();
+			}
+			Console.WriteLine("所要時間：" + (Environment.TickCount - countdownEventStart).ToString("#,0") + " [ms]");
+
+			// CountdownEvent 後始末
+			countdownEventCancellation.Cancel();
+			countdownEventMainToSub.Signal();
+			await countdownEventTask;
+			Console.WriteLine("カウント：" + testCountdownEvent.Counter.ToString("#,0"));
 		}
 	}
 }

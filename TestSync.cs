@@ -1,6 +1,6 @@
 ﻿// ============================================================================
 // 
-// AutoResetEvent の速度測定
+// 速度測定の基底クラス
 // 
 // ============================================================================
 
@@ -8,11 +8,13 @@
 //
 // ----------------------------------------------------------------------------
 
+using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace TestAutoResetEvent
 {
-	public class TestAutoResetEvent : TestSync
+	public abstract class TestSync
 	{
 		// ====================================================================
 		// コンストラクター・デストラクター
@@ -21,12 +23,35 @@ namespace TestAutoResetEvent
 		// --------------------------------------------------------------------
 		// コンストラクター
 		// --------------------------------------------------------------------
-		public TestAutoResetEvent(AutoResetEvent autoResetEventMainToSub, AutoResetEvent autoResetEventSubToMain, CancellationToken cancellationToken)
-				: base(cancellationToken)
+		public TestSync(CancellationToken cancellationToken)
 		{
-			_autoResetEventMainToSub = autoResetEventMainToSub;
-			_autoResetEventToSubToMain = autoResetEventSubToMain;
+			_cancellationToken = cancellationToken;
 		}
+
+		// ====================================================================
+		// public プロパティー
+		// ====================================================================
+
+		public Int32 Counter { get; set; }
+
+		// ====================================================================
+		// public メンバー関数
+		// ====================================================================
+
+		// --------------------------------------------------------------------
+		// テスト開始
+		// --------------------------------------------------------------------
+		public Task Invoke()
+		{
+			return Task.Run(Test);
+		}
+
+		// ====================================================================
+		// protected メンバー変数
+		// ====================================================================
+
+		// 中止用
+		protected CancellationToken _cancellationToken;
 
 		// ====================================================================
 		// protected メンバー関数
@@ -35,29 +60,6 @@ namespace TestAutoResetEvent
 		// --------------------------------------------------------------------
 		// テスト
 		// --------------------------------------------------------------------
-		protected override void Test()
-		{
-			while (true)
-			{
-				_autoResetEventMainToSub.WaitOne();
-				if (_cancellationToken.IsCancellationRequested)
-				{
-					return;
-				}
-
-				Counter++;
-				_autoResetEventToSubToMain.Set();
-			}
-		}
-
-		// ====================================================================
-		// private メンバー変数
-		// ====================================================================
-
-		// Main() からこちらへの通知
-		private AutoResetEvent _autoResetEventMainToSub;
-
-		// こちらから Main() への通知
-		private AutoResetEvent _autoResetEventToSubToMain;
+		protected abstract void Test();
 	}
 }
