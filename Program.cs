@@ -20,7 +20,7 @@ namespace TestAutoResetEvent
 		{
 			// 繰り返し回数
 			// 1 回の繰り返しでメイン→サブ、サブ→メインの 2 回同期が発生する
-			const Int32 NUM_REPEATS = 500000;
+			const Int32 NUM_REPEATS = 5000000;
 
 			// AutoResetEvent 準備
 			using AutoResetEvent autoResetEventMainToSub = new(false);
@@ -43,7 +43,7 @@ namespace TestAutoResetEvent
 			autoResetEventCancellation.Cancel();
 			autoResetEventMainToSub.Set();
 			await autoResetEventTask;
-			Console.WriteLine("カウント：" + testAutoResetEvent.Counter.ToString("#,0"));
+			testAutoResetEvent.ShowCounter();
 
 			// CountdownEvent 準備
 			using CountdownEvent countdownEventMainToSub = new(1);
@@ -68,7 +68,7 @@ namespace TestAutoResetEvent
 			countdownEventCancellation.Cancel();
 			countdownEventMainToSub.Signal();
 			await countdownEventTask;
-			Console.WriteLine("カウント：" + testCountdownEvent.Counter.ToString("#,0"));
+			testCountdownEvent.ShowCounter();
 		}
 	}
 }
